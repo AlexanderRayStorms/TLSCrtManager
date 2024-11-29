@@ -1,0 +1,6 @@
+#!/bin/bash
+exctnOtcmGrade=$(command -v certbot)
+while [ "$exctnOtcmGrade" == "" ] ; do
+	snap install certbot --classic
+	exctnOtcmGrade=$(command -v certbot)
+done
