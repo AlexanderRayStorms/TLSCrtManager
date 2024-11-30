@@ -1,13 +1,17 @@
 package main
 
+import  "crypto/x509"
+import  "encoding/pem"
 import  "errors"
 import  "fmt"
 import  "github.com/tidwall/gjson"
+import  "io/ioutil"
 import  "os"
 import  "os/exec"
 import  "regexp"
 import  "slices"
 import  "strings"
+//import  "syscall"
 import  "time"
 
 func    main () {
@@ -23,7 +27,7 @@ func    main () {
 	_bb50 :=  string (_bb05)
 	if gjson.Valid (_bb50) == false {
 		_cb05 := fmt.Sprintf (
-			`ERRR: Config file invalid. [%s]` /****/, _bb10.Error (),
+			`ERRR: Config file invalid.`,
 		)
 		Log (_cb05)
 		os.Exit (1)
@@ -63,40 +67,46 @@ func    main () {
 			_bb50, fmt.Sprintf ("Domains.%d.PrmryDomain", _cb05-1),
 		).String ( )
 		_cc03 := [ ]string {}
+		_cc04 := gjson.Get (
+			_bb50, fmt.Sprintf ("Domains.%d.KeyExportPath" , _cb05-1),
+		).String ( )
+		_cc05 := gjson.Get (
+			_bb50, fmt.Sprintf ("Domains.%d.CrtExportPath" , _cb05-1),
+		).String ( )
+		/***2***/
+		_cc01  = strings.ToLower (_cc01)
 		if regexp.MustCompile (
 		`^[a-z0-9]{8,8}\-[a-z0-9]{4,4}\-[a-z0-9]{4,4}\-[a-z0-9]{4,4}\-[a-z0-9]{12,12}$`,
 		).MatchString (_cc01) == false {
 			_db05 := fmt.Sprintf (
 				`ERRR: Domain ID %s invalid.`/***/  , _cc01,
 			)
-			Log (_db05)
-			os.Exit (1)
+			Log(_db05);continue
 		}
 		if slices.Contains  (_bg10, _cc01) {
 			_db05 := fmt.Sprintf (
 				`ERRR: Domain ID %s in use twice.`  , _cc01,
 			)
-			Log (_db05)
-			os.Exit (1)
+			Log(_db05);continue
 		}
-		_bg10 =append (_bg10,_cc01)
+		_bg10 =append(_bg10, _cc01)
 		if regexp.MustCompile (
 		`^[a-zA-Z0-9]+(\-[a-zA-Z0-9]+)*(\.[a-zA-Z0-9]+(\-[a-zA-Z0-9]+)*)+$`,
-		).MatchString (_cc02) == false {
+		).MatchString(_cc02) == false {
 			_db05 := fmt.Sprintf (
 				`ERRR: Primary domain %s invalid.`  , _cc02,
 			)
-			Log (_db05)
-			os.Exit (1)
+			Log(_db05);continue
 		}
 		_cc03 =append (_cc03, strings.ToLower (_cc02))
-		/***2***/
+		/***3***/
 		_cd05 := gjson.Get  (
 			_bb50, fmt.Sprintf(
 				"Domains.%d.ScndryDomain.#",_cb05-1,
 			),
 		).Int ( )
 		_cd10 := int  (_cd05)
+		_QT01 := false
 		for _db05:=1  ;_db05 <= _cd10; _db05++ {
 			_dc05 := gjson.Get (
 				_bb50, fmt.Sprintf(
@@ -109,15 +119,17 @@ func    main () {
 				_eb05 := fmt.Sprintf (
 					`ERRR: Secondary domain %s invalid.`,_dc05  ,
 				)
-				Log (_eb05)
-				os.Exit (1)
+				_QT01 =true
+				Log (_eb05) ; break
 			}
 			_dc05 = strings.ToLower(_dc05)
-			if slices.Contains (_cc03, _dc05) == false {
+			if slices.Contains     (_cc03, _dc05) == false {
 				_cc03 = append (_cc03, _dc05)
 			}
 		}
-		/***3***/
+		if  _QT01 ==true { continue }
+		/***4***/
+		_QT02 := false
 		for _ , _db10 :=range _cc03 {
 			_dc05 , _dc10 := exec.Command (
 				"dig" , "@1.1.1.1", _db10, "A", "+short",
@@ -127,8 +139,8 @@ func    main () {
 					`ERRR: Domain IP confirmation failed. [%s]`,
 					_dc10.Error (),
 				)
-				Log (_eb05)
-				os.Exit (1)
+				_QT02 =true
+				Log (_eb05) ; break
 			}
 			_dc50 := strings.Trim(string (_dc05), "\n ")
 			if _dc50 !=  _bf50 {
@@ -136,16 +148,118 @@ func    main () {
 					`ERRR: Domain %s pointing to IP %s not %s.`,
 					 _db10,_dc50 , _bf50,
 				)
-				Log (_eb05)
-				os.Exit (1)
+				_QT02 =true
+				Log (_eb05) ; break
 			}
 		}
-		/***4***/
-		//
+		if  _QT02 ==true { continue }
+		/***5***/
+		_cd24 := regexp.MustCompile (`\/[a-zA-Z0-9\-_\.]+$`).ReplaceAllString(_cc04,"")
+		_cd25 := regexp.MustCompile (`\/[a-zA-Z0-9\-_\.]+$`).ReplaceAllString(_cc05,"")
+		_, _cd35 := os.Stat (_cd24)
+		_, _cd45 := os.Stat (_cd25)
+		if _cd35 !=  nil && os.IsNotExist (_cd35) == false {
+			_db05 := fmt.Sprintf (
+				`ERRR: Domain %s key export path existence check failed. [%s]`,
+				_cc01, _cd35.Error (),
+			)
+			Log(_db05);continue
+		}
+		if _cd45 !=  nil && os.IsNotExist (_cd45) == false {
+			_db05 := fmt.Sprintf (
+				`ERRR: Domain %s crt export path existence check failed. [%s]`,
+				_cc01, _cd45.Error (),
+			)
+			Log(_db05);continue
+		}
+		if _cd35 !=  nil && os.IsNotExist (_cd35) {
+			_db05 := fmt.Sprintf (
+				`ERRR: Domain %s key export path does not exist.`, _cc01,
+			)
+			Log(_db05);continue
+		}
+		if _cd45 !=  nil && os.IsNotExist (_cd45) {
+			_db05 := fmt.Sprintf (
+				`ERRR: Domain %s crt export path does not exist.`, _cc01,
+			)
+			Log(_db05);continue
+		}
+		/***6***/
+		_, _ce10 := os.Stat ("/etc/TLSCrtManager/Dmn/" + _cc01 + ".key")
+		_, _cf10 := os.Stat ("/etc/TLSCrtManager/Dmn/" + _cc01 + ".crt")
+		if _ce10 !=  nil && os.IsNotExist (_ce10) == false {
+			_db05 := fmt.Sprintf (
+				`ERRR: Domain %s key existence check failed. [%s]`, _cc01,
+				_ce10.Error (),
+			)
+			Log(_db05);continue
+		}
+		if _cf10 !=  nil && os.IsNotExist (_cf10) == false {
+			_db05 := fmt.Sprintf (
+				`ERRR: Domain %s crt existence check failed. [%s]`, _cc01,
+				_cf10.Error (),
+			)
+			Log(_db05);continue
+		}
+		if _ce10 !=  nil && os.IsNotExist (_ce10) {
+			main_Phase2 (_cc01, _cc02, _cc03, _cc04, _cc05);continue
+		}
+		if _cf10 !=  nil && os.IsNotExist (_cf10) {
+			main_Phase2 (_cc01, _cc02, _cc03, _cc04, _cc05);continue
+		}
+		_cg05 , _cg10 := ioutil.ReadFile ("/etc/TLSCrtManager/Dmn/" + _cc01 + ".crt")
+		if _cg10 !=  nil {
+			_db05 := fmt.Sprintf (
+				`ERRR: Domain %s crt fetch failed. [%s]`, _cc01,
+				_cg10.Error (),
+			)
+			Log(_db05);continue
+		}
+		_cg50 :=_cg05
+		_ch05 := []*pem.Block {}
+		for len(_cg50 )> 0  {
+			_da51 := strings.Trim (string(_cg50), "\n ")
+			_cg50  = []byte(_da51 )
+			_db05 , _db10 := pem.Decode  (_cg50)
+			if len (_db10)== len (_cg50) {break}
+			_cg50 = _db10
+			if _db05== nil {continue /**/}
+			_ch05 = append (_ch05,_db05  )
+		}
+		var _ci05 *x509.Certificate = nil;
+		for _db05, _db10 := range  _ch05 {
+			_dc05 , _dc10 := x509.ParseCertificate (_db10.Bytes)
+			if _dc10 !=  nil {
+				_eb05 := fmt.Sprintf (
+					`ERRR: Domain %s crt subsection %d decode failed. [%s]`,
+					_cc01, _db05 + 1,_dc10.Error(),
+				)
+				Log(_eb05);break
+			}
+			_Slct := true
+			for _ , _eb10 := range _cc03 {
+				_dc05 := _dc05.VerifyHostname (_eb10 )
+				if _dc05 != nil {
+					 _Slct=false
+					 break
+				}
+			}
+			if _Slct == true {   _ci05= _dc05; break }
+		}
+		if _ci05 ==   nil  {
+			main_Phase2(_cc01, _cc02, _cc03, _cc04, _cc05);continue
+		}
+		if time.Now ().Add (time.Hour * 1080).Unix ( )> _ci05.NotAfter.Unix () {
+			main_Phase2(_cc01, _cc02, _cc03, _cc04, _cc05);continue
+		}
 	}
 return
 }
-func    Log (log string) (error) {
+func    main_Phase2 (
+	Id  , PrmryDomain string, ScndryDomain []string, KeyExportPath, CrtExportPath string,
+	)   {
+}
+func    Log (log string ) (error) {
 	_bb05 , _bb10 := os.OpenFile (
 		"/etc/TLSCrtManager/Log",
 		os.O_APPEND|os.O_WRONLY|os.O_CREATE,

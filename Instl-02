@@ -1,4 +1,22 @@
 #!/bin/bash
+mkdir  -p         /etc/TLSCrtManager
+cat    << 'EOF' > /etc/TLSCrtManager/Cnf
+{
+    "LetsEncrypAcntEmail" : "",
+    "Domains": [
+        {
+            "Id": "",
+            "PrmryDomain" : "",
+            "ScndryDomain": [
+                ""
+            ],
+            "KeyExportPath": "",
+            "CrtExportPath": ""
+        }
+    ]
+}
+EOF
+mkdir  -p   /etc/TLSCrtManager/Dmn
 exctnOtcmGrade=$(command -v certbot)
 while [ "$exctnOtcmGrade" == "" ] ; do
 	snap install certbot --classic
