@@ -1,6 +1,21 @@
 #!/bin/bash
-mkdir  -p         /etc/TLSCrtManager
-cat    << 'EOF' > /etc/TLSCrtManager/Cnf
+trap "echo 'Failed.'; exit 1" ERR
+################################################################################################
+# 12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012 #
+################################################################################################
+##### -------------------------
+dnf   install wget -y
+cp         pack/TLSCrtManager-1.x.x/TLSCrtManager /bin/TLSCrtManager
+chmod 0700 /bin/TLSCrtManager
+mkdir -p   /bin/TLSCrtManager.Extnsn
+cp    -r   pack/TLSCrtManager-1.x.x/TLSCrtManager.Extnsn/* /bin/TLSCrtManager.Extnsn/
+chmod 0700 /bin/TLSCrtManager.Extnsn
+chmod 0700 /bin/TLSCrtManager.Extnsn/*
+##### -------------------------
+mkdir -p   /etc/TLSCrtManager
+chmod 0700 /etc/TLSCrtManager
+if [ ! -f "/etc/TLSCrtManager/Cnf" ] ; then
+cat   << 'EOF' > /etc/TLSCrtManager/Cnf
 {
     "LetsEncrypAcntEmail" : "",
     "Domains": [
@@ -16,13 +31,16 @@ cat    << 'EOF' > /etc/TLSCrtManager/Cnf
     ]
 }
 EOF
-mkdir  -p   /etc/TLSCrtManager/Dmn
+fi
+mkdir -p   /etc/TLSCrtManager/Dmn
+chmod 0700 /etc/TLSCrtManager/Dmn
+##### -------------------------
 exctnOtcmGrade=$(command -v certbot)
 while [ "$exctnOtcmGrade" == "" ] ; do
 	snap install certbot --classic
 	exctnOtcmGrade=$(command -v certbot)
 done
-wget "https://github.com/static-web-server/static-web-server/releases/download/v2.33.1/static-web-server-v2.33.1-x86_64-unknown-linux-gnu.tar.gz"
+wget "https://github.com/static-web-server/static-web-server/releases/download/v2.33.1/static-web-server-v2.33.1-x86_64-unknown-linux-gnu.tar.gz" -q
  tar -xvf static-web-server-v2.33.1-x86_64-unknown-linux-gnu.tar.gz
   cp      static-web-server-v2.33.1-x86_64-unknown-linux-gnu/static-web-server /bin/sws
   rm  -rf static-web-server*

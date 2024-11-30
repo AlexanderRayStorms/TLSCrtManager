@@ -355,7 +355,7 @@ func    main_Phase2 (
 		_bb05  = fmt.Sprintf (`%s-w /var/tmp/TLSCrtManager -d %s` , _bb05, _cb10)
 	}
 	_bc05 , _bc10 := exec.Command (
-		"/root/.TLSCrtManager/ThrdPrmr-Extnsn01",
+		"/bin/TLSCrtManager.Extnsn/ThrdPrmr-Extnsn01",
 		_bb05, Id, ScndryDomain [0] , 
 	).CombinedOutput ()
 	if _bc10 !=  nil {
@@ -378,7 +378,7 @@ func    main_Phase3 (
 	))
 	/***2***/
 	_bc05 , _bc10 := exec.Command (
-		"/root/.TLSCrtManager/ThrdPrmr-Extnsn02",
+		"/bin/TLSCrtManager.Extnsn/ThrdPrmr-Extnsn02",
 		Id, KeyExportPath, CrtExportPath,
 	).CombinedOutput ()
 	if _bc10 !=  nil {
