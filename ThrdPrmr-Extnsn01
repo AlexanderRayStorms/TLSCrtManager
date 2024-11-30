@@ -1,9 +1,30 @@
 #!/bin/bash
 trap "echo 'Failed.'; exit 1" ERR
+if [ "$1" == "" ]
+then
+	echo "Payload not provided"
+	exit 1
+fi
+if [ "$2" == "" ]
+then
+	echo "Domain ID not provided"
+	exit 1
+fi
+if [ "$3" == "" ]
+then
+	echo "Primary domain not provided"
+	exit 1
+fi
 ###########
-rm    -rf  /etc/letsencrypt/archive/*
-rm    -rf  /etc/letsencrypt/live/*
-rm    -rf  /etc/letsencrypt/renewal/*
-mkdir -p  "/etc/TLSCrtManager/tls/$1"
-
-
+rm  -rf  /etc/letsencrypt/archive/*
+rm  -rf  /etc/letsencrypt/live/*
+rm  -rf  /etc/letsencrypt/renewal/*
+certbot certonly --webroot -n   $1
+rm  -rf "/etc/TLSCrtManager/Dmn/$2.key"
+rm  -rf "/etc/TLSCrtManager/Dmn/$2.crt"
+cp      "/etc/letsencrypt/live/$3/privkey.pem"   "/etc/TLSCrtManager/Dmn/$2.key"
+cp      "/etc/letsencrypt/live/$3/fullchain.pem" "/etc/TLSCrtManager/Dmn/$2.crt"
+chmod   0600 /etc/TLSCrtManager/Dmn/*
+rm  -rf  /etc/letsencrypt/archive/*
+rm  -rf  /etc/letsencrypt/live/*
+rm  -rf  /etc/letsencrypt/renewal/*

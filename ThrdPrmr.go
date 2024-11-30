@@ -60,8 +60,7 @@ func    main () {
 	/***4***/
 	Log ("STTS: Starting HTTP server to use for LetsEncrypt domain verification...")
 	_bf76 :=exec.Command(
-		"sws" , "-a",   "0.0.0.0", "-p", "1081" , "-d",
-		"/var/tmp/TLSCrtManager/", "-g", "trace",
+		"sws","-a","0.0.0.0","-p", "1081", "-d", "/var/tmp/TLSCrtManager", "-g", "trace",
 	)
 	_bf81 , _bf82 :=_bf76.StdoutPipe ( )
 	_bf83 , _bf84 :=_bf76.StderrPipe ( )
@@ -337,17 +336,59 @@ func    main () {
 		if time.Now ().Add (time.Hour * 1080).Unix ( )> _ci05.NotAfter.Unix () {
 			main_Phase2(_cc01, _cc02, _cc03, _cc04, _cc05);continue
 		}
+		main_Phase3 (_cc01, _cc02, _cc03, _cc04, _cc05)
 	}
 return
 }
 func    main_Phase2 (
 	Id  , PrmryDomain string, ScndryDomain []string, KeyExportPath, CrtExportPath string,
 	)   {
+	/***1***/
 	Log (fmt.Sprintf (
-		"STTS: Domain %s/%s [%s]: Issuing new certificate for %v....",
-		_CB51, _CB52, _CC01  , ScndryDomain,
+		"STTS: Domain %s/%s [%s]: Requesting new TLS key & crt from LetsEncrypt %v....",
+		_CB51, _CB52, _CC01 , ScndryDomain,
 	))
-	time.Sleep (time.Second * 5  )
+	/***2***/
+	_bb05 := ""
+	for _ , _cb10 := range ScndryDomain {
+		if _bb05 != "" { _bb05 = _bb05 + " " }
+		_bb05  = fmt.Sprintf (`%s-w /var/tmp/TLSCrtManager -d %s` , _bb05, _cb10)
+	}
+	_bc05 , _bc10 := exec.Command (
+		"/root/.TLSCrtManager/ThrdPrmr-Extnsn01",
+		_bb05, Id, ScndryDomain [0] , 
+	).CombinedOutput ()
+	if _bc10 !=  nil {
+		_cb05 := fmt.Sprintf (
+			`ERRR: Domain %s/%s [%s]: Certificate fetch failed. [%s:%s]`,
+			_CB51, _CB52, _CC01 , _bc10.Error (), string (_bc05),
+		)
+		Log(_cb05)
+		return
+	}
+	main_Phase3 (Id, PrmryDomain, ScndryDomain, KeyExportPath, CrtExportPath)
+}
+func    main_Phase3 (
+	Id  , PrmryDomain string, ScndryDomain []string, KeyExportPath, CrtExportPath string,
+	)   {
+	/***1***/
+	Log (fmt.Sprintf (
+		"STTS: Domain %s/%s [%s]: Exporting TLS key & crt....",
+		_CB51, _CB52, _CC01 , 
+	))
+	/***2***/
+	_bc05 , _bc10 := exec.Command (
+		"/root/.TLSCrtManager/ThrdPrmr-Extnsn02",
+		Id, KeyExportPath, CrtExportPath,
+	).CombinedOutput ()
+	if _bc10 !=  nil {
+		_cb05 := fmt.Sprintf (
+			`ERRR: Domain %s/%s [%s]: Certificate export failed. [%s:%s]`,
+			_CB51, _CB52, _CC01 , _bc10.Error (), string (_bc05),
+		)
+		Log(_cb05)
+		return
+	}
 }
 func    Log (log string ) (error) {
 	_bb05 , _bb10 := os.OpenFile (

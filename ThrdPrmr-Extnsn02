@@ -1,0 +1,22 @@
+#!/bin/bash
+trap "echo 'Failed.'; exit 1" ERR
+if [ "$1" == "" ]
+then
+	echo "Domain ID not provided"
+	exit 1
+fi
+if [ "$2" == "" ]
+then
+	echo "TLS key export path not provided"
+	exit 1
+fi
+if [ "$3" == "" ]
+then
+	echo "TLS crt export path not provided"
+	exit 1
+fi
+###########
+rm  -rf "$2"
+rm  -rf "$3"
+cp      "/etc/TLSCrtManager/Dmn/$1.key" "$2"
+cp      "/etc/TLSCrtManager/Dmn/$1.crt" "$3"
