@@ -1,5 +1,9 @@
 #!/bin/bash
 trap "echo 'TLSCrtManager update failed'; exit 1" ERR
+if [ "$1" == "" ]; then
+	echo "Email address to use to create LetsEncrypt account not provided"
+	exit 1
+fi
 ################################################################################################
 # 12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012 #
 ################################################################################################
@@ -20,6 +24,6 @@ if [ "$CrntVrsnHash" == "$RmttVrsnHash" ]; then
         echo "Doing nothing"
         exit  0
 fi
-/var/tmp/TLSCrtManager-installation/TLSCrtManager-1.x.x/Instl-02
+/var/tmp/TLSCrtManager-installation/TLSCrtManager-1.x.x/Instl-02 "$1"
 rm   -rf /var/tmp/TLSCrtManager-installation
 echo "Update complete"
