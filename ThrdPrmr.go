@@ -5,17 +5,20 @@ import  "encoding/pem"
 import  "errors"
 import  "fmt"
 import  "github.com/tidwall/gjson"
+//import  "io"
 import  "io/ioutil"
 import  "os"
 import  "os/exec"
 import  "regexp"
 import  "slices"
 import  "strings"
-//import  "syscall"
+import  "syscall"
 import  "time"
 
 func    main () {
+	Log ("STTS: Running...")
 	/***1***/
+	Log ("STTS: Validating configuration...")
 	_bb05 , _bb10 := os.ReadFile ("/etc/TLSCrtManager/Cnf")
 	if _bb10 !=  nil {
 		_cb05 := fmt.Sprintf (
@@ -32,7 +35,6 @@ func    main () {
 		Log (_cb05)
 		os.Exit (1)
 	}
-	Log ("STTS: Running...")
 	/***2***/
 	_bc05 := gjson.Get (_bb50, "LetsEncrypAcntEmail").String ()
 	if regexp.MustCompile (
@@ -46,6 +48,7 @@ func    main () {
 		os.Exit (1)
 	}
 	/***3***/
+	Log ("STTS: Fetching this host's IP address...")
 	_bf05 , _bf10 := exec.Command("curl","ident.me","-s").CombinedOutput ()
 	if _bf10 !=  nil {
 		_cb05 := fmt.Sprintf (
@@ -56,10 +59,77 @@ func    main () {
 	}
 	_bf50 :=string(_bf05)
 	/***4***/
-	_bg05 :=int   (gjson.Get(_bb50, "Domains.#").Int ())
+	Log ("STTS: Starting HTTP server to use for LetsEncrypt domain verification...")
+	_bf76 :=exec.Command(
+		"sws" , "-a",   "0.0.0.0", "-p", "1081" , "-d",
+		"/var/tmp/TLSCrtManager/", "-g", "trace",
+	)
+//	_bf76.SysProcAttr = &syscall.SysProcAttr {Setpgid:true}
+	_bf81 , _bf82 :=_bf76.StdoutPipe ( )
+	_bf83 , _bf84 :=_bf76.StderrPipe ( )
+	if _bf82 !=  nil {
+		_cb05 := fmt.Sprintf (
+			`ERRR: HTTP server std-out fetch failed. [%s]`, _bf82.Error (),
+		)
+		Log (_cb05)
+		os.Exit (1)
+	}
+	if _bf84 !=  nil {
+		_cb05 := fmt.Sprintf (
+			`ERRR: HTTP server std-err fetch failed. [%s]`, _bf84.Error (),
+		)
+		Log (_cb05)
+		os.Exit (1)
+	}
+	_bf91 :=_bf76.Start ()
+	if _bf91 !=  nil {
+		_cb05 := fmt.Sprintf (
+			`ERRR: HTTP server setup failed (1). [%s]`, _bf91.Error (),
+		)
+		Log (_cb05)
+		os.Exit (1)
+	}
+	time.Sleep  (time.Second * 2 )
+	_bf92 := exec.Command ("ps", "-a")
+	_bf94 , _bf95 := _bf92.CombinedOutput ()
+	if _bf95 !=  nil {
+		_cb05 := fmt.Sprintf (
+			`ERRR: HTTP server setup confirmation failed (1). [%s]`,
+			 _bf95.Error (),
+		)
+		Log (_cb05)
+		os.Exit (1)
+	}
+	if regexp.MustCompile (
+		fmt.Sprintf (`(?m)%d.+sws$`, _bf76.Process.Pid),
+	).MatchString (string (_bf94))==false {
+		_ca01  := make([]byte, 1048576)
+		_ca02  := make([]byte, 1048576)
+		_ca11 , _ := _bf81.Read (_ca01)
+		_ca12 , _ := _bf83.Read (_ca02)
+		_ca21 := string(_ca01 [:_ca11])
+		_ca22 := string(_ca02 [:_ca12])
+		_cb05 := fmt.Sprintf (
+			"ERRR: HTTP server setup failed (2).\n%s\n%s\n%s]",
+			"Server crashed", string (_ca21) , string (_ca22) ,
+		)
+		Log (_cb05)
+		os.Exit (1)
+	}
+	defer func( ) {
+		_bf76.Process.Signal (syscall.SIGTERM)
+		_bf76.Process.Signal (syscall.SIGKILL)
+	} ( )	
+	/***5***/
+	Log ("STTS: Processing domains...")
+	_bg05 :=int   (gjson.Get(_bb50, "Domains.#").Int ( ))
 	_bg10 :=[ ] string {}
 	for _cb05 := 1; _cb05 <= _bg05; _cb05 ++ {
 		/***1***/
+		_cb51 := fmt.Sprintf ("%d", _cb05)
+		_cb52 := fmt.Sprintf ("%d", _bg05)
+		for len(_cb51)<  len (  _cb52 )  { _cb51 = "0" + _cb51 }
+		/***2***/
 		_cc01 := gjson.Get (
 			_bb50, fmt.Sprintf ("Domains.%d.Id",_cb05-1),
 		).String ( )
@@ -73,7 +143,7 @@ func    main () {
 		_cc05 := gjson.Get (
 			_bb50, fmt.Sprintf ("Domains.%d.CrtExportPath" , _cb05-1),
 		).String ( )
-		/***2***/
+		/***3***/
 		_cc01  = strings.ToLower (_cc01)
 		if regexp.MustCompile (
 		`^[a-z0-9]{8,8}\-[a-z0-9]{4,4}\-[a-z0-9]{4,4}\-[a-z0-9]{4,4}\-[a-z0-9]{12,12}$`,
@@ -90,6 +160,14 @@ func    main () {
 			Log(_db05);continue
 		}
 		_bg10 =append(_bg10, _cc01)
+		Log (fmt.Sprintf (
+			"STTS: Domain %s/%s [%s]: Picked up_",
+			_cb51, _cb52, _cc01,
+		))
+		Log (fmt.Sprintf (
+			"STTS: Domain %s/%s [%s]: Parameters validation in progress...",
+			_cb51, _cb52, _cc01,
+		))
 		if regexp.MustCompile (
 		`^[a-zA-Z0-9]+(\-[a-zA-Z0-9]+)*(\.[a-zA-Z0-9]+(\-[a-zA-Z0-9]+)*)+$`,
 		).MatchString(_cc02) == false {
@@ -99,7 +177,7 @@ func    main () {
 			Log(_db05);continue
 		}
 		_cc03 =append (_cc03, strings.ToLower (_cc02))
-		/***3***/
+		/***4***/
 		_cd05 := gjson.Get  (
 			_bb50, fmt.Sprintf(
 				"Domains.%d.ScndryDomain.#",_cb05-1,
@@ -128,7 +206,11 @@ func    main () {
 			}
 		}
 		if  _QT01 ==true { continue }
-		/***4***/
+		/***5***/
+		Log (fmt.Sprintf (
+			"STTS: Domain %s/%s [%s]: Confirming all domains point to this host...",
+			_cb51, _cb52, _cc01,
+		))
 		_QT02 := false
 		for _ , _db10 :=range _cc03 {
 			_dc05 , _dc10 := exec.Command (
@@ -153,7 +235,7 @@ func    main () {
 			}
 		}
 		if  _QT02 ==true { continue }
-		/***5***/
+		/***6***/
 		_cd24 := regexp.MustCompile (`\/[a-zA-Z0-9\-_\.]+$`).ReplaceAllString(_cc04,"")
 		_cd25 := regexp.MustCompile (`\/[a-zA-Z0-9\-_\.]+$`).ReplaceAllString(_cc05,"")
 		_, _cd35 := os.Stat (_cd24)
@@ -184,7 +266,12 @@ func    main () {
 			)
 			Log(_db05);continue
 		}
-		/***6***/
+		/***7***/
+		_CB51 = _cb51; _CB52= _cb52; _CC01=_cc01
+		Log (fmt.Sprintf (
+			"STTS: Domain %s/%s [%s]: Processing begins...",
+			_cb51, _cb52, _cc01,
+		))
 		_, _ce10 := os.Stat ("/etc/TLSCrtManager/Dmn/" + _cc01 + ".key")
 		_, _cf10 := os.Stat ("/etc/TLSCrtManager/Dmn/" + _cc01 + ".crt")
 		if _ce10 !=  nil && os.IsNotExist (_ce10) == false {
@@ -258,6 +345,11 @@ return
 func    main_Phase2 (
 	Id  , PrmryDomain string, ScndryDomain []string, KeyExportPath, CrtExportPath string,
 	)   {
+	Log (fmt.Sprintf (
+		"STTS: Domain %s/%s [%s]: Issuing new certificate....",
+		_CB51, _CB52, _CC01,
+	))
+	time.Sleep (time.Second * 5  )
 }
 func    Log (log string ) (error) {
 	_bb05 , _bb10 := os.OpenFile (
@@ -271,7 +363,7 @@ func    Log (log string ) (error) {
 	}
 	defer _bb05.Close()
 	_bb50 := fmt.Sprintf (
-		`%s [OpLog]: %s`, time.Now ().Format ("06-01-02/15:04:05"), log,
+		`%s [OpLog]:%s`, time.Now ().Format ("2006-01-02/15:04:05"), log,
 	)
 	_, _bc10 :=_bb05.WriteString (_bb50 + "\n" )
 	if _bc10 !=  nil {
@@ -281,3 +373,8 @@ func    Log (log string ) (error) {
 	fmt.Println (_bb50)
 	return  nil
 }
+var     (
+	_CB51 string
+	_CB52 string
+	_CC01 string
+)
