@@ -1,10 +1,14 @@
 #!/bin/bash
 trap "echo 'TLSCrtManager installation failed'; exit 1" ERR
+if [ "$1" == "" ]; then
+	echo "Email address to use to create LetsEncrypt account not provided"
+	exit 1
+fi
 ################################################################################################
 # 12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012 #
 ################################################################################################
 ##### -------------------------
-dnf   install wget -y
+dnf   install bind-utils wget -y
 cp         pack/TLSCrtManager-1.x.x/TLSCrtManager          /bin/TLSCrtManager
 cp         pack/TLSCrtManager-1.x.x/TLSCrtManager-Update   /bin/TLSCrtManager-Update
 chmod 0700 /bin/TLSCrtManager
@@ -38,11 +42,14 @@ chmod 0600 /etc/TLSCrtManager/Cnf
 mkdir -p   /etc/TLSCrtManager/Dmn
 chmod 0700 /etc/TLSCrtManager/Dmn
 ##### -------------------------
+trap - ERR
 exctnOtcmGrade=$(command -v certbot)
 while [ "$exctnOtcmGrade" == "" ] ; do
 	snap install certbot --classic
 	exctnOtcmGrade=$(command -v certbot)
 done
+certbot register --agree-tos -n -m "$1"
+trap "echo 'TLSCrtManager installation failed'; exit 1" ERR
 wget "https://github.com/static-web-server/static-web-server/releases/download/v2.33.1/static-web-server-v2.33.1-x86_64-unknown-linux-gnu.tar.gz" -q
 tar -xvf    static-web-server-v2.33.1-x86_64-unknown-linux-gnu.tar.gz
 cp          static-web-server-v2.33.1-x86_64-unknown-linux-gnu/static-web-server /bin/sws

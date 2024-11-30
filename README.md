@@ -19,7 +19,9 @@ Certificates issued by this tool expire in 90 days. As such it is recommended to
     systemctl reboot
 A reboot is necessary to complete the installation. Then log back in.
 
-    ./Instl-02
+    ./Instl-02 abc@domain.com
+
+LetsEncrypt requires the user's email address, to request a certificate from them. Provide your email address as an argument to `Instl-02`. It could be any email address.
 
 ## Setup: Phase 2
 The use case of TLSCrtManager is a main project that wants to outsource TLS certificate management to a secondary tool. As such, it is assumed you already have an HTTP server set up.
