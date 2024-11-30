@@ -1,0 +1,24 @@
+#!/bin/bash
+trap "echo 'TLSCrtManager update failed'; exit 1" ERR
+################################################################################################
+# 12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012 #
+################################################################################################
+##### -------------------------
+rm   -rf /var/tmp/TLSCrtManager-installation
+mkdir -p /var/tmp/TLSCrtManager-installation
+cd       /var/tmp/TLSCrtManager-installation
+dnf   install wget zip -y
+wget  "https://github.com/AlexanderRayStorms/TLSCrtManager/archive/refs/tags/v1.x.x.zip"
+unzip v1.x.x.zip
+cd       /var/tmp/TLSCrtManager-installation/TLSCrtManager-1.x.x
+CrntVrsnHash=$(sha512sum /bin/TLSCrtManager)
+CrntVrsnHash=$(echo -n "$CrntVrsnHash" | sed 's/\/bin\/TLSCrtManager//g')
+CrntVrsnHash=$(echo -n "$CrntVrsnHash" | sed 's/ //g')
+RmttVrsnHash=$(cat  /var/tmp/TLSCrtManager-installation/TLSCrtManager-1.x.x/pack/TLSCrtManager-1.x.x/Hash)
+if [ "$CrntVrsnHash" == "$RmttVrsnHash" ]; then
+        echo "TLSCrtManager already up-to-date"
+        echo "Doing nothing"
+        exit  0
+fi
+/var/tmp/TLSCrtManager-installation/TLSCrtManager-1.x.x/Instl-02
+echo "Update complete"

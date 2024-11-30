@@ -5,8 +5,10 @@ trap "echo 'TLSCrtManager installation failed'; exit 1" ERR
 ################################################################################################
 ##### -------------------------
 dnf   install wget -y
-cp         pack/TLSCrtManager-1.x.x/TLSCrtManager /bin/TLSCrtManager
+cp         pack/TLSCrtManager-1.x.x/TLSCrtManager          /bin/TLSCrtManager
+cp         pack/TLSCrtManager-1.x.x/TLSCrtManager-Update   /bin/TLSCrtManager-Update
 chmod 0700 /bin/TLSCrtManager
+chmod 0700 /bin/TLSCrtManager-Update
 mkdir -p   /bin/TLSCrtManager.Extnsn
 cp    -r   pack/TLSCrtManager-1.x.x/TLSCrtManager.Extnsn/* /bin/TLSCrtManager.Extnsn/
 chmod 0700 /bin/TLSCrtManager.Extnsn
@@ -32,6 +34,7 @@ cat   << 'EOF' > /etc/TLSCrtManager/Cnf
 }
 EOF
 fi
+chmod 0600 /etc/TLSCrtManager/Cnf
 mkdir -p   /etc/TLSCrtManager/Dmn
 chmod 0700 /etc/TLSCrtManager/Dmn
 ##### -------------------------
