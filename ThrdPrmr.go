@@ -5,7 +5,6 @@ import  "encoding/pem"
 import  "errors"
 import  "fmt"
 import  "github.com/tidwall/gjson"
-//import  "io"
 import  "io/ioutil"
 import  "os"
 import  "os/exec"
@@ -64,7 +63,6 @@ func    main () {
 		"sws" , "-a",   "0.0.0.0", "-p", "1081" , "-d",
 		"/var/tmp/TLSCrtManager/", "-g", "trace",
 	)
-//	_bf76.SysProcAttr = &syscall.SysProcAttr {Setpgid:true}
 	_bf81 , _bf82 :=_bf76.StdoutPipe ( )
 	_bf83 , _bf84 :=_bf76.StderrPipe ( )
 	if _bf82 !=  nil {
@@ -346,8 +344,8 @@ func    main_Phase2 (
 	Id  , PrmryDomain string, ScndryDomain []string, KeyExportPath, CrtExportPath string,
 	)   {
 	Log (fmt.Sprintf (
-		"STTS: Domain %s/%s [%s]: Issuing new certificate....",
-		_CB51, _CB52, _CC01,
+		"STTS: Domain %s/%s [%s]: Issuing new certificate for %v....",
+		_CB51, _CB52, _CC01  , ScndryDomain,
 	))
 	time.Sleep (time.Second * 5  )
 }
