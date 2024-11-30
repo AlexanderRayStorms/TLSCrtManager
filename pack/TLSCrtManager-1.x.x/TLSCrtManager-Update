@@ -21,4 +21,5 @@ if [ "$CrntVrsnHash" == "$RmttVrsnHash" ]; then
         exit  0
 fi
 /var/tmp/TLSCrtManager-installation/TLSCrtManager-1.x.x/Instl-02
+rm   -rf /var/tmp/TLSCrtManager-installation
 echo "Update complete"
