@@ -44,4 +44,6 @@ In addition to printing logs to the console. TLSCrtManager also logs output to f
 
 ## Update
 
-    TLSCrtManager-Update
+    TLSCrtManager-Update abc@domain.com
+
+LetsEncrypt requires the user's email address, to request a certificate from them. Provide your email address as an argument to `Instl-02`. It could be any email address.
