@@ -1,0 +1,14 @@
+#!/bin/bash
+trap "echo 'TLSCrtManager build failed'; exit 1" ERR
+################################################################################################
+# 12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012 #
+################################################################################################
+##### -------------------------
+go    build
+Hash=$(sha512sum main)
+Hash=$(echo -n "$Hash"  |  sed 's/main//g')
+Hash=$(echo -n "$Hash"  |  sed 's/ //g')
+echo   -n "$Hash" | tee pack/TLSCrtManager-1.x.x/Hash
+mv     main pack/TLSCrtManager-1.x.x/TLSCrtManager
+chmod  0700 pack/TLSCrtManager-1.x.x/TLSCrtManager
+echo ""
