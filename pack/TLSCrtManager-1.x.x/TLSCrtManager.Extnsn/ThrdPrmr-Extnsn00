@@ -1,0 +1,5 @@
+#!/bin/bash
+trap "echo 'Failed.'; exit 1" ERR
+pgrep sws | while IFS= read -r Line; do
+    kill "$Line"
+done

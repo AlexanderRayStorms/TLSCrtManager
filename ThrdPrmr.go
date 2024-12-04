@@ -58,6 +58,19 @@ func    main () {
 	}
 	_bf50 :=string(_bf05)
 	/***4***/
+	Log ("STTS: Terminating defunct HTTP server...")
+	_bf61 , _bf62 := exec.Command (
+		"/bin/TLSCrtManager.Extnsn/ThrdPrmr-Extnsn00",
+	).CombinedOutput ()
+	if _bf62 !=  nil {
+		_cb05 := fmt.Sprintf (
+			`ERRR: Defunct HTTP servers termination failed. [%s:%s]`,
+			_bf62.Error (), string (_bf61),
+		)
+		Log (_cb05)
+		os.Exit (1)
+	}
+	/***4***/
 	Log ("STTS: Starting HTTP server to use for LetsEncrypt domain verification...")
 	_bf76 :=exec.Command(
 		"sws","-a","0.0.0.0","-p", "1081", "-d", "/var/tmp/TLSCrtManager", "-g", "trace",

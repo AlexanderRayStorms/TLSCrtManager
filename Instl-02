@@ -8,6 +8,13 @@ fi
 # 12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012 #
 ################################################################################################
 ##### -------------------------
+pgrep TLSCrtManager | while IFS= read -r Line; do
+    kill "$Line"
+done
+pgrep sws           | while IFS= read -r Line; do
+    kill "$Line"
+done
+##### -------------------------
 dnf   install bind-utils wget -y
 cp         pack/TLSCrtManager-1.x.x/TLSCrtManager          /bin/TLSCrtManager
 cp         pack/TLSCrtManager-1.x.x/TLSCrtManager-Update   /bin/TLSCrtManager-Update
