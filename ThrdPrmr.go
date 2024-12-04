@@ -100,7 +100,7 @@ func    main () {
 		os.Exit (1)
 	}
 	time.Sleep  (time.Second * 2 )
-	_bf92 := exec.Command ("ps", "-a")
+	_bf92 := exec.Command ("ps", "-e")
 	_bf94 , _bf95 := _bf92.CombinedOutput ()
 	if _bf95 !=  nil {
 		_cb05 := fmt.Sprintf (
