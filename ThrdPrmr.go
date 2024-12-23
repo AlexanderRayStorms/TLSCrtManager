@@ -73,7 +73,7 @@ func    main () {
 	/***4***/
 	Log ("STTS: Starting HTTP server to use for LetsEncrypt domain verification...")
 	_bf76 :=exec.Command(
-		"sws","-a","0.0.0.0","-p", "1081", "-d", "/var/tmp/TLSCrtManager", "-g", "trace",
+		"sws","-a","127.0.0.1","-p","1081","-d", "/var/tmp/TLSCrtManager", "-g", "trace",
 	)
 	_bf81 , _bf82 :=_bf76.StdoutPipe ( )
 	_bf83 , _bf84 :=_bf76.StderrPipe ( )
@@ -224,7 +224,8 @@ func    main () {
 		_QT02 := false
 		for _ , _db10 :=range _cc03 {
 			_dc05 , _dc10 := exec.Command (
-				"dig" , "@1.1.1.1", _db10, "A", "+short",
+				"dig" , "@1.1.1.1", "@1.0.0.1", "@8.8.8.8", "@8.8.4.4", _db10,
+				"A", "+short",
 			).CombinedOutput ()
 			if _dc10 !=  nil {
 				_eb05 := fmt.Sprintf (
@@ -235,10 +236,35 @@ func    main () {
 				Log (_eb05) ; break
 			}
 			_dc50 := strings.Trim(string (_dc05), "\n ")
-			if _dc50 !=  _bf50 {
+			_dg05 := strings.Split (_dc50 , "\n" )
+			_dh01 := []string {}
+			for _ , _eb05 := range  _dg05 {
+				if regexp.MustCompile (
+				`^([0-9]{1,3}\.){3,3}[0-9]{1,3}$`,
+				).MatchString (_eb05) {
+					_dh01 =append (_dh01, _eb05)
+				}
+			}
+			if len (_dh01) < 1 {
 				_eb05 := fmt.Sprintf (
-					`ERRR: Domain %s pointing to IP %s not %s.`,
-					 _db10,_dc50 , _bf50,
+					`ERRR: Domain '%s' points to no valid IPv4 address.`,
+					 _db10,
+				)
+				_QT02 =true
+				Log (_eb05) ; break
+			}
+			if len (_dh01) > 1 {
+				_eb05 := fmt.Sprintf (
+					`ERRR: Domain '%s' has more than one IP address: %v`,
+					_db10, _dh01,
+				)
+				_QT02 =true
+				Log (_eb05) ; break
+			}
+			if _dh01  [0] != _bf50 {
+				_eb05 := fmt.Sprintf (
+					`ERRR: Domain '%s' does not point to IP: %v`, _db10,
+					 _bf50 ,
 				)
 				_QT02 =true
 				Log (_eb05) ; break
